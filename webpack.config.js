@@ -1,5 +1,5 @@
 module.exports = {
-    entry: "./src/index.js",
+    entry: "./src/edge.js",
     output: {
         path: __dirname,
         filename: "build/polymation.js"
