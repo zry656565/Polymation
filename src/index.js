@@ -1,31 +1,42 @@
 var Delaunay = require("delaunay-fast/delaunay");
+var Sobel = require('sobel/sobel');
 
-var canvas = document.getElementById("canvas"),
-    ctx = canvas.getContext("2d"),
-    vertices = new Array(2048),
-    i, x, y;
+var canvas = document.getElementById('canvas'),
+    context = canvas.getContext('2d');
 
-for(i = vertices.length; i--; ) {
-    do {
-        x = Math.random() - 0.5;
-        y = Math.random() - 0.5;
-    } while(x * x + y * y > 0.25);
+var image = new Image();
+image.src = '../images/apple.jpg';
+image.onload = drawImage;
 
-    x = (x * 0.96875 + 0.5) * canvas.width;
-    y = (y * 0.96875 + 0.5) * canvas.height;
+function drawImage(event) {
+    var w, h, vertices = [];
 
-    vertices[i] = [x, y];
-}
+    canvas.width = w = image.width;
+    canvas.height = h = image.height;
 
-console.time("triangulate");
-var triangles = Delaunay.triangulate(vertices);
-console.timeEnd("triangulate");
+    context.drawImage(image, 0, 0);
+    var imageData = context.getImageData(0, 0, w, h);
 
-for(i = triangles.length; i; ) {
-    ctx.beginPath();
-    --i; ctx.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-    --i; ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-    --i; ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-    ctx.closePath();
-    ctx.stroke();
+    var edge = Sobel(imageData, true); // result of edge detect
+
+    for (var y = 0; y < h; y++) {
+        for (var x = 0; x < w; x++) {
+            if (edge[y][x] > 150) {
+                vertices.push([x, y]);
+            }
+        }
+    }
+
+    console.time("triangulate");
+    var triangles = Delaunay.triangulate(vertices);
+    console.timeEnd("triangulate");
+
+    for(var i = triangles.length; i; ) {
+        context.beginPath();
+        --i; context.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
+        --i; context.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
+        --i; context.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
+        context.closePath();
+        context.stroke();
+    }
 }
