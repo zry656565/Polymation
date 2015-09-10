@@ -19,6 +19,6 @@
   "readmeFilename": "README.md",
   "devDependencies": {
     "delaunay-fast": "^1.0.1",
-    "sobel": "0.0.2"
+    "sobel": "0.0.4"
   }
 }

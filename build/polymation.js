@@ -44,46 +44,51 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Delaunay = __webpack_require__(1);
-	var Sobel = __webpack_require__(2);
+	var Delaunay = __webpack_require__(1)
+	var Sobel = __webpack_require__(2)
 
 	var canvas = document.getElementById('canvas'),
-	    context = canvas.getContext('2d');
+	    context = canvas.getContext('2d')
 
-	var image = new Image();
-	image.src = '../images/apple.jpg';
-	image.onload = drawImage;
+	var image = new Image()
+	image.src = '../images/apple.jpg'
+	image.onload = drawImage
 
 	function drawImage(event) {
-	    var w, h, vertices = [];
+	    var w, h, vertices = []
 
-	    canvas.width = w = image.width;
-	    canvas.height = h = image.height;
+	    canvas.width = w = image.width
+	    canvas.height = h = image.height
 
-	    context.drawImage(image, 0, 0);
-	    var imageData = context.getImageData(0, 0, w, h);
+	    context.drawImage(image, 0, 0)
+	    var imageData = context.getImageData(0, 0, w, h)
 
-	    var edge = Sobel(imageData, true); // result of edge detect
+	    // result of edge detect
+	    var edgeDetectResult = Sobel(imageData)
+	    edgeDetectResult.get = function(x, y) {
+	        return this[(y * w + x) * 4];
+	    }
+
 
 	    for (var y = 0; y < h; y++) {
 	        for (var x = 0; x < w; x++) {
-	            if (edge[y][x] > 150) {
-	                vertices.push([x, y]);
+	            if (edgeDetectResult.get(x, y) > 120) {
+	                vertices.push([x, y])
 	            }
 	        }
 	    }
 
-	    console.time("triangulate");
-	    var triangles = Delaunay.triangulate(vertices);
-	    console.timeEnd("triangulate");
+	    console.time("triangulate")
+	    var triangles = Delaunay.triangulate(vertices)
+	    console.timeEnd("triangulate")
 
 	    for(var i = triangles.length; i; ) {
-	        context.beginPath();
-	        --i; context.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-	        --i; context.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-	        --i; context.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-	        context.closePath();
-	        context.stroke();
+	        context.beginPath()
+	        --i; context.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1])
+	        --i; context.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1])
+	        --i; context.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1])
+	        context.closePath()
+	        context.stroke()
 	    }
 	}
 
@@ -334,9 +339,9 @@
 	(function(root) {
 	  'use strict';
 
-	  function Sobel(imageData, ifMiddleData) {
+	  function Sobel(imageData) {
 	    if (!(this instanceof Sobel)) {
-	      return new Sobel(imageData, ifMiddleData);
+	      return new Sobel(imageData);
 	    }
 
 	    var w = imageData.width;
@@ -381,10 +386,7 @@
 
 	    pixelAt = bindPixelAt(grayscaleData);
 
-	    var middleData = [];
-
 	    for (y = 0; y < h; y++) {
-	      ifMiddleData && middleData.push([]);
 	      for (x = 0; x < w; x++) {
 	        var pixelX = (
 	            (kernelX[0][0] * pixelAt(x - 1, y - 1)) +
@@ -399,26 +401,29 @@
 	        );
 
 	        var pixelY = (
-	            (kernelY[0][0] * pixelAt(x - 1, y - 1)) +
-	            (kernelY[0][1] * pixelAt(x, y - 1)) +
-	            (kernelY[0][2] * pixelAt(x + 1, y - 1)) +
-	            (kernelY[1][0] * pixelAt(x - 1, y)) +
-	            (kernelY[1][1] * pixelAt(x, y)) +
-	            (kernelY[1][2] * pixelAt(x + 1, y)) +
-	            (kernelY[2][0] * pixelAt(x - 1, y + 1)) +
-	            (kernelY[2][1] * pixelAt(x, y + 1)) +
-	            (kernelY[2][2] * pixelAt(x + 1, y + 1))
+	          (kernelY[0][0] * pixelAt(x - 1, y - 1)) +
+	          (kernelY[0][1] * pixelAt(x, y - 1)) +
+	          (kernelY[0][2] * pixelAt(x + 1, y - 1)) +
+	          (kernelY[1][0] * pixelAt(x - 1, y)) +
+	          (kernelY[1][1] * pixelAt(x, y)) +
+	          (kernelY[1][2] * pixelAt(x + 1, y)) +
+	          (kernelY[2][0] * pixelAt(x - 1, y + 1)) +
+	          (kernelY[2][1] * pixelAt(x, y + 1)) +
+	          (kernelY[2][2] * pixelAt(x + 1, y + 1))
 	        );
 
 	        var magnitude = Math.sqrt((pixelX * pixelX) + (pixelY * pixelY))>>0;
 
-	        ifMiddleData && (middleData[y][x] = magnitude);
 	        sobelData.push(magnitude, magnitude, magnitude, 255);
 	      }
 	    }
 
-	    if (ifMiddleData) return middleData;
-	    return new ImageData(new Uint8ClampedArray(sobelData), w, h);
+	    var clampedArray = new Uint8ClampedArray(sobelData);
+	    clampedArray.toImageData = function() {
+	      return new ImageData(clampedArray, w, h);
+	    };
+
+	    return clampedArray;
 	  }
 
 	  if (true) {
